@@ -1,12 +1,31 @@
 # AI SOC Control Plane
 
-A local AI-powered Security Operations Center. Runs entirely on your machine — no cloud, no API keys, no data leaving your network.
+<p>
+<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT" />
+<img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="python" />
+<img src="https://img.shields.io/badge/stack-FastAPI%20%C2%B7%20SQLite%20%C2%B7%20Ollama-0a7" alt="stack" />
+<img src="https://img.shields.io/badge/runs-100%25%20locally-success" alt="local" />
+<img src="https://img.shields.io/badge/status-active-brightgreen" alt="status" />
+</p>
 
-```
-Wazuh alerts → Ingestion Pipeline → Context Builder → Ollama AI → SOC Dashboard
+**A Security Operations Center that runs entirely on your laptop.** No cloud, no API keys, no data leaving your network. Wazuh alerts go in, a local Ollama model reads them in context, and you get structured incident assessments telling you exactly what happened, why it matters, and what to do.
+
+```mermaid
+flowchart LR
+  W[Wazuh alerts.json] --> I[Ingestion Pipeline]
+  I --> N[Normalize · ECS map]
+  N --> E[Extract IPs / users / files]
+  E --> C{Severity gate}
+  C -->|HIGH+| Q[AI Queue]
+  C -->|LOW| DB[(SQLite)]
+  Q --> O[Ollama · qwen2.5:7b]
+  O --> A[Structured Assessment]
+  A --> DB
+  DB --> UI[SOC Dashboard]
+  A --> UI
 ```
 
-**What it does:** Detects security events (SSH brute force, file integrity changes, rootkits, privilege escalation, suspicious ports), correlates them by entity (IP, user, file), and produces structured AI assessments telling you exactly what happened, why it matters, and what to do.
+**Detects:** SSH brute force · file integrity tampering · rootkit indicators · privilege escalation · suspicious port openings · honeytoken access. **Correlates** by entity (IP, user, file). **Learns** from your false-positive feedback without retraining.
 
 ---
 
