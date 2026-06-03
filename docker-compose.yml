@@ -1,0 +1,109 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════════════════════════
+#  AI SOC Control Plane — docker-compose.yml
+#
+#  Three services:
+#    app           — FastAPI control plane, served at localhost:8000
+#    wazuh-manager — SIEM, alerts.json written to wazuh_logs volume
+#    prometheus    — Optional metrics (can be disabled to save RAM)
+#
+#  Ollama runs on the HOST (better GPU access, not in Docker).
+#  Start with: ollama serve   (in a separate terminal)
+#
+#  Usage:
+#    docker compose up -d
+#    open http://localhost:8000
+# ══════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── AI SOC Control Plane ────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aicp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Wazuh alerts file — read-only access for tailing
+      - wazuh_logs:/var/ossec/logs:ro
+      # Docker socket — for container event monitoring
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persist the SQLite database
+      - aicp_data:/data
+    environment:
+      - DB_PATH=/data/aicp.db
+      - WAZUH_ALERTS_PATH=/var/ossec/logs/alerts/alerts.json
+      # Ollama runs on host — use host.docker.internal
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=qwen2.5:7b
+      - PORT=8000
+      - DEBUG=false
+    extra_hosts:
+      # Allows app container to reach Ollama on the host
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      wazuh-manager:
+        condition: service_started
+    networks:
+      - aicp-net
+
+  # ── Wazuh Manager (SIEM) ─────────────────────────────────────────────────
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.7.2
+    container_name: wazuh-manager
+    restart: unless-stopped
+    hostname: wazuh-manager
+    volumes:
+      - wazuh_logs:/var/ossec/logs
+      - wazuh_etc:/var/ossec/etc
+      - wazuh_data:/var/ossec/data
+      - ./config/wazuh/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
+    ports:
+      # Agent enrollment (needed for host agent)
+      - "1515:1515"
+      # Syslog input
+      - "1514:1514/udp"
+    networks:
+      - aicp-net
+    environment:
+      - WAZUH_MANAGER_IP=wazuh-manager
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  # ── Prometheus (optional metrics) ────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aicp-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    networks:
+      - aicp-net
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+volumes:
+  wazuh_logs:
+  wazuh_etc:
+  wazuh_data:
+  prometheus_data:
+  aicp_data:
+
+networks:
+  aicp-net:
+    driver: bridge
