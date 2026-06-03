@@ -52,3 +52,7 @@ secrets/
 
 # Local config
 config/local.*
+
+# Demo capture
+_demo_capture.py
+aicp.db

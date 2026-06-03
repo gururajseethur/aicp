@@ -29,6 +29,41 @@ flowchart LR
 
 ---
 
+## See it work
+
+The dashboard (cyberpunk-styled, dark, low-noise) and the underlying API:
+
+<p>
+<img src="docs/screenshots/01-dashboard.png" alt="AI:SOC dashboard" width="49%" />
+<img src="docs/screenshots/02-api-docs.png" alt="API surface" width="49%" />
+</p>
+
+Run aicp against the bundled sample alerts and it produces real, structured AI assessments. Here's an unedited example from a fresh boot (the model is the 3B `hermes3:3b` running locally — no API, no cloud):
+
+```json
+{
+  "severity": "high",
+  "confidence": 0.9,
+  "summary": "Multiple SSHD authentication failures from IP 185.220.101.47",
+  "incident_type": "brute_force",
+  "mitre_technique": "T1110.001",
+  "narrative": {
+    "assessment": "It is likely that this IP address is conducting a brute force attack against the SSH service, trying various passwords to gain unauthorized access.",
+    "risk": "If left unaddressed, the attacker may eventually succeed in gaining access to the system, potentially leading to data exfiltration or other malicious activities.",
+    "recommended_actions": [
+      "Block the source IP from accessing the SSH service",
+      "Monitor for further attempts and escalate if necessary"
+    ]
+  },
+  "model_used": "hermes3:3b",
+  "inference_ms": 77846
+}
+```
+
+Full sample at [`docs/sample-assessment.json`](docs/sample-assessment.json).
+
+---
+
 ## Requirements
 
 | Component | Minimum | Recommended |

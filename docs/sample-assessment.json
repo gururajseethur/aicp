@@ -1,0 +1,22 @@
+{
+  "id": "c258b294-8e2f-495d-bd18-d8cdb746e23b",
+  "severity": "critical",
+  "confidence": 0.0,
+  "summary": "AI analysis unavailable: all_attempts_failed",
+  "incident_type": "anomaly",
+  "mitre_technique": "T1068",
+  "narrative": {
+    "source": "unknown \u00e2\u20ac\u201d analysis failed",
+    "evidence": [
+      "CVE-2023-4911: Vulnerability CVE-2023-4911 detected in glibc."
+    ],
+    "assessment": "Manual review required. AI analysis failed.",
+    "risk": "Unknown \u00e2\u20ac\u201d assess manually.",
+    "recommended_actions": [
+      "Review alert manually",
+      "Check system logs"
+    ]
+  },
+  "model_used": "fallback",
+  "inference_ms": 0
+}
