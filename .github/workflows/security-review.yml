@@ -1,0 +1,43 @@
+# Claude Code Security Review — AI-powered PR security analysis.
+# Requires CLAUDE_API_KEY repo secret.
+#
+# Especially valuable here — aicp is an AI SOC Control Plane, so every
+# diff to alert routing, context building, or LLM dispatch deserves a
+# Claude-grade second look.
+
+name: Security Review
+
+permissions:
+  pull-requests: write
+  contents: read
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+
+      - name: Run Claude security review
+        uses: anthropics/claude-code-security-review@main
+        with:
+          claude-api-key: ${{ secrets.CLAUDE_API_KEY }}
+          comment-pr: true
+          upload-results: true
+          claudecode-timeout: 20
+          exclude-directories: |
+            node_modules,
+            .venv,
+            venv,
+            dist,
+            build,
+            __pycache__,
+            backups/,
+            data/
